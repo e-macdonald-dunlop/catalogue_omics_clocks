@@ -53,13 +53,10 @@ if(!is.na(config$validation_sample)){
 ##
 # want to test the association of covariates with omic
 #want to output the summary
-# + drop covariates if not signif in majority of omics
 
 
 if(length(config$pre_correction_covariates)>0){
 	covs<-config$pre_correction_covariates
-	#assoc_covariates(omics_data,covariate_data,covs)
-	#covariate_data<-do_bespoke(covariate_data,config$bespoke_pheno_rscript)
 	output<-correct_data(omics_data,covariate_data,covs)
 	corrected_data<-output$corr_data
 	#########
@@ -71,23 +68,14 @@ if(length(config$pre_correction_covariates)>0){
 	if(!is.na(config$zscore_resid)){
 		corrected_data[,-1]<-apply_zscore_filter(corrected_matrix,config$zscore_resid)
 	}
-	#make NA heatmaps
-	#writeLines("Plotting missingness heatmap pre outlier removal...")
-	#png("NA_heatmap.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(corrected_data)
-	#print(plot_obj)
-	#dev.off()
+	
 
 	write.table(corrected_data,"st02_corrected_omics_data_pre_scale.tsv",col.names=T,row.names=F,quote=F,sep="\t")
 
 	#remove missing values
 	writeLines("Removing outliers...")
 	corrected_data<-do_bespoke_qc(corrected_data,config$bespoke_omics_qc_rscript)
-	#writeLines("Plotting missingness heatmap post outlier removal...")
-	#png("NA_heatmap_post_zscore.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(corrected_data)
-	#print(plot_obj)
-	#dev.off()
+	
 
 	heading("Creating Omics Data Desciptive Plots...")
 	writeLines("Plotting correlation heatmap...")
@@ -103,10 +91,7 @@ if(length(config$pre_correction_covariates)>0){
 	write.table(corrected_data,"st02_corrected_omics_data.tsv",col.names=T,row.names=F,quote=F,sep="\t")
 	heading("Writing out files..")
 	writeLines("Writing corrected omics data to st02_corrected_omics_data_.tsv")
-	#do_clustering(corrected_data)
 	if(!is.na(config$validation_sample)){
-		#covs<-config$pre_correction_covariates
-		#assoc_covariates(val_omics_data,val_covariate_data,covs)
 		val_output<-correct_data(val_omics_data,val_covariate_data,output$covariates_chosen,sample="validation")
 		val_corrected_data<-val_output$corr_data
 		#########
