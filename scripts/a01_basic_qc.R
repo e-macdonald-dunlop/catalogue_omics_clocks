@@ -126,33 +126,17 @@ if(!is.na(config$validation_sample)){
 #remove missing values
 writeLines("Removing outliers...")
 omics_data<-remove_single_value_predictors(omics_data)
-#####
-#temp
 clean_data<-omics_data
-#####
-#clean_data<-do_bespoke_qc(omics_data,config$bespoke_omics_qc_rscript)
 
 if(!is.na(config$validation_sample)){
 	writeLines("Removing outliers from validation...")
-	#####
-	#temp
+	
 	val_clean_data<-val_omics_data
-	#####
-	#val_clean_data<-remove_NAs_validation(val_omics_data,clean_data)
 }
 
-#writeLines("Plotting missingness heatmap post outlier removal...")
-#png("NA_heatmap_post_zscore.png") #,width=20,height=20
-#plot_obj<-plot_NA_heatmap(omics_data)
-#print(plot_obj)
-#dev.off()
-
-
-#heading("Creating Omics Data Desciptive Plots...")
-#writeLines("Plotting correlation heatmap...")
-#make_correlation_heatmap(omics_data)
-#writeLines("Plotting Screeplot...")
-#make_screeplot(clean_data)
+heading("Creating Omics Data Desciptive Plots...")
+writeLines("Plotting correlation heatmap...")
+make_correlation_heatmap(omics_data)
 writeLines("Plotting correlation of omics and outcome phenotype...")
 make_outcome_correlation_heatmap(omics_data,covariate_data,config$outcome)
 make_outcome_predictor_plots(omics_data,covariate_data,config$outcome)
@@ -165,12 +149,10 @@ if(!is.na(config$validation_sample)){
 	make_correlation_heatmap(val_omics_data,config$validation_sample)
 	writeLines("Plotting validation Screeplot...")
 	make_screeplot(val_omics_data,config$validation_sample)
-	#writeLines("Performing validation factor analysis...")
-	#do_factor_analysis(val_omics_data,config$validation_sample)
 	writeLines("Plotting correlation of validation omics and outcome phenotype...")
 	make_outcome_correlation_heatmap(val_omics_data,val_covariate_data,config$outcome,config$validation_sample)
 	make_outcome_predictor_plots(val_omics_data,val_covariate_data,config$outcome,config$validation_sample)
-	#make_batch_plot(val_omics_data)
+	make_batch_plot(val_omics_data)
 }
 
 #write out clean data
@@ -187,10 +169,6 @@ if(!is.na(config$validation_sample)){
 	writeLines(paste0("Writing QC'd validation covariate data to st01_qc_pheno_data_",config$validation_sample,".tsv"))
 }
 
-#make_profile_plots(clean_data)
-#if(!is.na(config$validation_sample)){
-	#make_profile_plots(val_clean_data,config$validation_sample)
-#}
 
 cat("\n\n\nDone!\n\n\n")
 
