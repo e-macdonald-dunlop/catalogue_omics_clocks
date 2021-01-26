@@ -125,16 +125,6 @@ if(!is.na(config$validation_sample)){
 }
 
 
-#heading("Elastic Net Regression...")
-
-#if(!is.na(config$validation_sample)){
-	#make_clock(1,training_matrix$predictor_matrix,training_matrix$outcome_matrix,testing_matrix$predictor_matrix,testing_matrix$outcome_matrix,validation_matrix$predictor_matrix,validation_matrix$outcome_matrix)
-#}else{
-	#make_clock(1,training_matrix$predictor_matrix,training_matrix$outcome_matrix,testing_matrix$predictor_matrix,testing_matrix$outcome_matrix)
-#}
-
-
-#
 
 heading("Penalised Regression...")
 
@@ -149,8 +139,7 @@ writeLines(x)
 for_kk_plot<-get_stats("st03_pred_obs_resid_testing_1.tsv",config$cohort,config$omic_assay)
 head(for_kk_plot)
 write.table(for_kk_plot,paste0("st03_obs_pred_outcome_correlation_stats_",config$cohort,".tsv"),col.names=T,row.names=F,quote=F,sep="\t")
-#writeLines()
-#
+
 
 slope_stats<-slope_extract("st03_pred_obs_resid_testing_1.tsv",config$cohort,config$omic_assay)
 head(slope_stats)
@@ -160,8 +149,7 @@ write.table(slope_stats,paste0("st03_obs_pred_outcome_fit_stats_",config$cohort,
 for_kk_plot<-get_stats("st03_pred_obs_resid_training.tsv",config$cohort,config$omic_assay)
 head(for_kk_plot)
 write.table(for_kk_plot,paste0("st03_obs_pred_outcome_correlation_stats_",config$cohort,"_training.tsv"),col.names=T,row.names=F,quote=F,sep="\t")
-#writeLines()
-#
+
 
 slope_stats<-slope_extract("st03_pred_obs_resid_training.tsv",config$cohort,config$omic_assay)
 head(slope_stats)
