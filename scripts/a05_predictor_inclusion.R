@@ -42,7 +42,6 @@ for(i in 2:500){
   	# count the non-zero coefficients
   	for_plot$count<-ifelse(model_data$X1!=0,for_plot$count+1,for_plot$count)
   	head(for_plot)
-  	#hist(for_plot$count)
 }
 
 writeLines("Preview of inclusion data from plot...")
@@ -72,7 +71,6 @@ dim(for_plot)
 heading("Sorting omics based on inclusion frequency...")
 for_plot<-for_plot[order(for_plot$count),]
 exp_stages<-for_plot$predictor
-#class(exp_stages)
 writeLines("Preview data frame for plot...")
 head(for_plot)
 
