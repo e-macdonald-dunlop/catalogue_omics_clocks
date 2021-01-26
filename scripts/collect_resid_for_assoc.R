@@ -8,7 +8,6 @@ library(gdata)
 library(Hmisc)
 
 args<-commandArgs(T)
-#args<-"/exports/igmm/eddie/wilson-lab/projects/prj_086_omics_clocks/final/clock_pheno_assoc/final/data/"
 if(!file.exists(args[1])){dir.create(args[1])}
 setwd(args[1])
 source("/exports/igmm/eddie/wilson-lab/projects/prj_107_omics_clock_pipeline/scripts/eddie/pipeline_functions.R")
@@ -28,7 +27,7 @@ full<-base
 
 template_path<-"/exports/igmm/eddie/wilson-lab/projects/prj_086_omics_clocks/final/XXX/YYY/QQQ/st03_pred_obs_resid_ZZZ_1.tsv"
 template_path_2<-"/exports/igmm/eddie/wilson-lab/projects/prj_086_omics_clocks/final/XXX/YYY/QQQ/st03_ZZZ_data_1.tsv"
-methods<-c("fixed_alpha") #,"lasso","cv_alpha"
+methods<-c("fixed_alpha","lasso","cv_alpha") #
 data_set<-c("testing","training")
 clock_types<-c("p03_make_clock","p06_core_model_prediction","a_minus_b/p03_make_clock","b_only/p03_make_clock","a_only/p03_make_clock","3_pcs/p03_make_clock","5_pcs/p03_make_clock","10_pcs/p03_make_clock","20_pcs/p03_make_clock") #
 
@@ -102,32 +101,6 @@ colnames(final_data)<-gsub("pheno/fewer","pheno",colnames(final_data))
 #need to remove slashes fromthe names
 colnames(final_data)<-gsub("\\/","_",colnames(final_data))
 
-##############################
-# Need to read in age_at_dexa
-##############################
-#read in dob from base
-#base<-fread("/exports/igmm/eddie/wilson-lab/data/base_data/orcades/phenotypes/orcades_base_phenotypes.tsv",select=c("iid","date_of_birth"),data.table=FALSE)
-#date<-fread("/exports/igmm/eddie/wilson-lab/projects/prj_107_omics_clock_pipeline/scripts/eddie/dexa_date.txt",data.table=FALSE)
-#df<-merge(base,date,by="iid",all=TRUE)
-#df$age_at_dexa<-as.numeric(as.Date(df$date,format="%d/%m/%Y")-as.Date(df$date_of_birth,format="%d/%m/%Y"))/365
-#df<-df[,c("iid","age_at_dexa")]
-#final_data<-merge(final_data,df,by="iid",all=TRUE)
 
 write.table(final_data,"all_clocks_resid_training_testing_age_13_07_2020.tsv",col.names=T,row.names=F,quote=F,sep="\t")
-
-
-###########
-#file for peter
-
-#df<-fread("all_clocks_resid_training_testing_age_12_06_2020.tsv",data.table=FALSE)
-#head(df)
-#dim(df)
-
-#df<-df[,grepl("fixed_alpha_p03_make_clock|age_at_vene",colnames(df))]
-#head(df)
-#dim(df)
-
-#colnames(df)<-gsub("_fixed_alpha_p03_make_clock","",colnames(df))
-
-#write.table(df,"all_clocks_resid_training_testing_age_standard_12_06_2020.tsv",col.names=T,row.names=F,quote=F,sep="\t")
 
