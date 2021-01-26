@@ -55,7 +55,6 @@ get_paramaters_from_config<-function(){
 		pre_correction_covariates=pre_correction_covariates,
 		additional_covariates=additional_covariates,
 		to_drop=to_drop,
-		#covariates_to_extract=,
 		covariate_list=c(outcome,standard_covariates,additional_covariates,pre_correction_covariates),
 		bespoke_omics_rscript=config$bespoke_omics_rscript,
 		bespoke_pheno_rscript=config$bespoke_pheno_rscript,
@@ -93,7 +92,6 @@ get_omics_data<-function(path,cols_to_drop){
 	names(data)[1]<-"iid"
 	if(length(path)>1){
 		for(file in path[-1]){
-			#print(file)
 			if(!file.exists(file))stop("Error: No file Omics file found!")
 			df<-fread(paste0(file),header=T,drop=cols_to_drop,stringsAsFactors=F,data.table=F)
 			df<-make_names_r_readable(df)
@@ -117,7 +115,6 @@ get_covariate_data<-function(path){
 			df<-make_names_r_readable(df)
 			if(!("iid"%in%colnames(df))){df$iid<-df$id}
 			if(!("iid"%in%colnames(df))){df$iid<-df$idcode}
-			#names(df)[1]<-"iid"
 			data<-merge(data,df,by="iid",all=TRUE)
 		}
 	}
@@ -182,17 +179,6 @@ plot_NA_heatmap<-function(data){
 	return(x)
 }
 
-#remove_NAs<-function(data){ #,covairate_list
-	#high_missing<-apply(data,2,prop_nas)>0.3
-	#if(sum(high_missing==TRUE)>4){
-		#data[data == 0] <- NA
-		#new_data<-remove_missing_nmr(data,0.08)
-	#}else{
-		#new_data<-data[,colSums(is.na(data))<nrow(data)]
-	#}
-	#return(new_data)
-#}
-
 do_bespoke_qc<-function(df,bespoke_script){
 		if(!is.na(bespoke_script)){
 			heading(paste0("Running ",bespoke_script,"..."))
@@ -202,48 +188,6 @@ do_bespoke_qc<-function(df,bespoke_script){
 	return(df)
 }
 
-
-#remove_NAs<-function(data){
-	#png("NA_heatmap_1.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(data)
-	#print(plot_obj)
-	#dev.off()
-	#data[data == 0] <- NA
-	#png("NA_heatmap_2.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(data)
-	#print(plot_obj)
-	#dev.off()
-	## remove rows with high missingness 
-	#bad_rows<-apply(data,1,prop_nas)>0.3
-	#data<-data[which(!bad_rows),]
-	#png("NA_heatmap_3.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(data)
-	#print(plot_obj)
-	#dev.off()
-	##find out the prop na of each column
-
-	##remove cols with high missingness
-	#bad_cols<-apply(data,2,prop_nas)>0.05
-	#data<-data[,which(!bad_cols)]
-	#png("NA_heatmap_4.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(data)
-	#print(plot_obj)
-	#dev.off()
-	##again for metabolon
-	#bad_rows<-apply(data,1,prop_nas)>0.04
-	#data<-data[which(!bad_rows),]
-	#png("NA_heatmap_5.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(data)
-	#print(plot_obj)
-	#dev.off()
-	#bad_cols<-apply(data,2,prop_nas)>0
-	#data<-data[,which(!bad_cols)]
-	#png("NA_heatmap_6.png") #,width=20,height=20
-	#plot_obj<-plot_NA_heatmap(data)
-	#print(plot_obj)
-	#dev.off()
-	#return(data)
-#}
 
 remove_NAs_validation<-function(validation_df,clean_clock_df){
 	validation_df<-validation_df[,colnames(clean_clock_df)]
@@ -276,10 +220,6 @@ trim_rows<-function(df,threshold=0){
 remove_missing_nmr<-function(data_orc,col_threshold,row_threshold=0){
 	data_trim<-trim_cols(data_orc,col_threshold)
 	data_trim_again<-trim_rows(data_trim)
-	#to_keep<-colnames(data_trim_again)
-	#data_kor<-data_kor[,to_keep]
-	#data_kor<-trim_rows(data_kor)
-	#df<-list(orcades=data_trim_again,korcula=data_kor)
 	df<-data_trim_again
 	return(df)
 }
@@ -288,7 +228,6 @@ remove_missing_nmr<-function(data_orc,col_threshold,row_threshold=0){
 
 missingness_by_predictor<-function(df){
   x<-data.frame(missingness=apply(df,2,function(x) sum(is.na(x))))
-  #x<-as.numeric(x)
   ggplot(x,aes(x=missingness)) +
     geom_density(fill="#1c9099",alpha = 0.5,colour="grey")
   ggplot(x, aes(missingness)) +
@@ -298,7 +237,6 @@ missingness_by_predictor<-function(df){
 
 missingness_by_sample<-function(df){
   x<-data.frame(missingness=apply(df,1,function(x) sum(is.na(x))))
-  #x<-as.numeric(x)
   ggplot(x,aes(x=missingness)) +
     geom_density(fill="#1c9099",alpha = 0.5,colour="grey")
   ggplot(x, aes(missingness)) +
@@ -410,16 +348,13 @@ remove_single_value_predictors<-function(df){
 }
 
 make_pcs<-function(df){
-	#pcs<-prcomp(t(na.omit(t(df[,which(colnames(df)!="iid")]))),center=TRUE,scale=TRUE)
 	pcs<-prcomp(na.omit(df[,which(colnames(df)!="iid")]),center=TRUE,scale=TRUE)
 	return(pcs)
 }
 
 make_screeplot<-function(df,sample=""){
 	pcs<-make_pcs(df) #,na.action=na.omit()
-	#plot_obj<-screeplot(pcs)
 	png(paste0("screeplot_",sample,".png"))
-	#print(plot_obj)
 	screeplot(pcs)
 	dev.off()
 	#want to output the number of PCs that explain 95% of the variance in omics df
@@ -429,14 +364,6 @@ make_screeplot<-function(df,sample=""){
 	write.table(pc_95,paste0("pc_95_variance_",sample,".txt"),col.names=T,row.names=T,quote=F,sep="\t")
 }
 
-#do_factor_analysis<-function(df,sample=""){
-	#ev <- eigen(cor(df[-1])) # get eigenvalues
-	#ap <- parallel(subject=nrow(df[-1]),var=ncol(df[-1]), rep=100, cent=.05)
-	#nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
-	#png(paste0("factor_analysis_",sample,".png"))
-	#plotnScree(nS)
-	#dev.off()
-#}
 
 make_correlation_heatmap<-function(df,sample=""){
 	cor_matrix<-rcorr(as.matrix(df[-1])) #,use="pairwise.complete.obs"
@@ -462,8 +389,6 @@ make_outcome_correlation_heatmap<-function(omics_df,cov_df,outcome,sample=""){
   		theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   		scale_fill_manual(values=c("blue3","#cb181d"),labels = c("Positive Correlation","Negative Correlation"))
   	ggsave(paste0("outcome_correlation_plot_",sample,".png"))
-	#write out b dataset
-	get_A_B_dataset(df,omics_df,sample)
 }
 
 make_outcome_predictor_plots<-function(omics_df,cov_df,outcome,sample=""){
@@ -483,28 +408,6 @@ make_outcome_predictor_plots<-function(omics_df,cov_df,outcome,sample=""){
 		abline(model)
 	}
 	dev.off()
-}
-
-get_A_B_dataset<-function(df,omics_df,sample=""){
-	if(nrow(df[which(df$colour=="Negative Correlation"),])>0){
-		new_df<-df[which(df$colour=="Negative Correlation"),]
-		to_switch<-omics_df[,which(colnames(omics_df)=="iid" | colnames(omics_df)%in%rownames(new_df))]
-		swapped<-data.frame(matrix(NA,ncol=ncol(to_switch),nrow=nrow(to_switch)))
-		swapped[,1]<-to_switch[,1,drop=F]
-		names(swapped)<-colnames(to_switch)
-		swapped[,2:ncol(to_switch)]<-apply(to_switch[-1],2,function(x) x*(-1))
-		#need to positive ones
-		if(nrow(df[which(df$colour=="Positive Correlation"),])>0){
-			pos<-df[which(df$colour=="Positive Correlation"),]
-			pos_df<-omics_df[,which(colnames(omics_df)=="iid" | colnames(omics_df)%in%rownames(pos))]
-			new_omics_df<-merge(swapped,pos_df,by="iid",all=T)
-			write.table(new_omics_df,paste0("a_minus_b_omics_data_",sample,".tsv"),col.names=T,row.names=F,quote=F,sep="\t")
-		}else{
-			write.table(swapped,paste0("a_minus_b_omics_data_",sample,".tsv"),col.names=T,row.names=F,quote=F,sep="\t")
-		}
-	}else{
-		write.table(omics_df,paste0("a_minus_b_omics_data_",sample,".tsv"),col.names=T,row.names=F,quote=F,sep="\t")
-	}
 }
 
 make_batch_plot<-function(df){
@@ -549,217 +452,20 @@ scale_centre<-function(df){
 	return(df)
 }
 
-#correct_data<-function(omics_df,cov_df,covariate_list,sample="discovery"){
-#	df<-merge(omics_df,cov_df,by="iid")
-#	df<-df[complete.cases(df[,-1]),]
-#	corr_data<-data.frame(matrix(NA,ncol=ncol(omics_df),nrow=nrow(df)))
-#	corr_data[,1]<-df[,"iid"]
-#	names(corr_data)[1]<-"iid"
-#	heading("Testing association of covariates with predictors...")
-#	model<-lm(df[,2] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-#	sig_count<-data.frame(covariate=rownames(summary(model)$coefficients)[-1],sig_count=0)
-#	for(i in 2:ncol(omics_df)){
-#		writeLines("")
-#		writeLines(paste0("Testing the association of ",colnames(df[,i,drop=F])," and ",covariate_list))
-#		#df<-df[,c(colnames(omics_df[,i,drop=F]),colnames(cov_df[,-1]))]
-#		model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-#		print(summary(model))
-#		###
-#		#need to see if each covariate is signif in majority or predictors
-#		results<-summary(model)
-#		for(j in 1:nrow(sig_count)){
-#			cat(paste0(sig_count[j,1],"\n"))
-#			cov<-sig_count[j,1]
-#			pval<-results$coefficients[which(rownames(results$coefficients)==cov),4]
-#			count<-sig_count[j,2]
-#			new_count<-ifelse(pval<=0.05,count+1,count)
-#			sig_count[j,2]<-new_count
-#		}
-#	}
-#	total<-ncol(omics_df[,2:ncol(omics_df)])
-#	sig_count[,"proportion"]<-sig_count[,2]/total
-#	sig_count[,"cov_from_list"]<-NA
-#	for(covariate in covariate_list){
-#		fit_cov<-sig_count[grep(covariate,sig_count[,1]),1]
-#		fit_cov<-unlist(strsplit(as.character(fit_cov)," "))
-#		sig_count[which(sig_count[,1]%in%fit_cov),"cov_from_list"]<-covariate
-#	}
-#	sig_count[,"keep"]<-ifelse(sig_count[,3]>0.5,TRUE,FALSE)
-#	new_cov_list<-unique(sig_count[which(sig_count[,3]>0.5),4])
-#	print(sig_count)
-#	if(sample!="validation"){
-#		heading("Correcting for the following covariates:")
-#		print(new_cov_list)	
-#		if(length(new_cov_list)>0){
-#			for(i in 2:ncol(omics_df)){
-#				model<-lm(df[,i] ~ .,data=subset(df,select=new_cov_list),na.action=na.omit)
-#				results<-summary(model)
-#				temp<-data.frame(results$residuals)
-#				#print(sum(is.na(temp$results.residuals)))
-#				corr_data[,i]<-temp$results.residuals
-#				colnames(corr_data)[i]<-colnames(omics_data)[i]	
-#			}
-#		}else{
-#			for(i in 2:ncol(omics_df)){
-#				model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-#				results<-summary(model)
-#				temp<-data.frame(results$residuals)
-#				#print(sum(is.na(temp$results.residuals)))
-#				corr_data[,i]<-temp$results.residuals
-#				colnames(corr_data)[i]<-colnames(omics_data)[i]	
-#			}
-#		}
-#	}else{
-#		heading("Correcting for the following covariates:")
-#		print(covariate_list)
-#		for(i in 2:ncol(omics_df)){
-#			model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-#			results<-summary(model)
-#			temp<-data.frame(results$residuals)
-#			#print(sum(is.na(temp$results.residuals)))
-#			corr_data[,i]<-temp$results.residuals
-#			colnames(corr_data)[i]<-colnames(omics_data)[i]	
-#		}
-#	}	
-#	return(list(corr_data=corr_data,covariates_chosen=new_cov_list))
-#}
 
-
-#correct_data<-function(omics_df,cov_df,covariate_list,sample="discovery"){
-#	df<-merge(omics_df,cov_df,by="iid")
-#	#df<-df[complete.cases(df[,-1]),]
-#	corr_data<-data.frame(matrix(NA,ncol=ncol(omics_df),nrow=nrow(df)))
-#	corr_data[,1]<-df[,"iid"]
-#	names(corr_data)[1]<-"iid"
-#	#heading("Testing association of covariates with predictors...")
-#	#model<-lm(df[,2] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-#	#sig_count<-data.frame(covariate=rownames(summary(model)$coefficients)[-1],sig_count=0)
-#	#for(i in 2:ncol(omics_df)){
-#		#writeLines("")
-#		#writeLines(paste0("Testing the association of ",colnames(df[,i,drop=F])," and ",covariate_list))
-#		##df<-df[,c(colnames(omics_df[,i,drop=F]),colnames(cov_df[,-1]))]
-#		#model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-#		#print(summary(model))
-#		####
-#		##need to see if each covariate is signif in majority or predictors
-#		#results<-summary(model)
-#		#for(j in 1:nrow(sig_count)){
-#			##writeLines(paste0(sig_count[j,1]))
-#			#cov<-sig_count[j,1]
-#			#pval<-results$coefficients[which(rownames(results$coefficients)==cov),4]
-#			#count<-sig_count[j,2]
-#			#new_count<-ifelse(pval<=0.05,count+1,count)
-#			#sig_count[j,2]<-new_count
-#		#}
-#	#}
-#	#total<-ncol(omics_df[,2:ncol(omics_df)])
-#	#sig_count[,"proportion"]<-sig_count[,2]/total
-#	#sig_count[,"cov_from_list"]<-NA
-#	#for(covariate in covariate_list){
-#		#fit_cov<-sig_count[grep(covariate,sig_count[,1]),1]
-#		#sig_count[which(sig_count[,1]==fit_cov),"cov_from_list"]<-covariate
-#	#}
-#	#sig_count[,"keep"]<-ifelse(sig_count[,3]>0.5,TRUE,FALSE)
-#	#new_cov_list<-sig_count[which(sig_count[,3]>0.5),4]
-#	#print(sig_count)
-#	#heading("Correcting for the following covariates:")
-#	#print(new_cov_list)
-#	#if(length(new_cov_list)>0){
-#		#for(i in 2:ncol(omics_df)){
-#			#model<-lm(df[,i] ~ .,data=subset(df,select=new_cov_list),na.action=na.omit)
-#			#results<-summary(model)
-#			#temp<-data.frame(results$residuals)
-#			##print(sum(is.na(temp$results.residuals)))
-#			#corr_data[,i]<-temp$results.residuals
-#			#colnames(corr_data)[i]<-colnames(omics_df)[i]	
-#		#}
-#	#}else{
-#	for(i in 2:ncol(omics_df)){
-#		print(i)
-#		model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-#		results<-summary(model)
-#		temp<-data.frame(results$residuals)
-#		#print(sum(is.na(temp$results.residuals)))
-#		#corr_data[,i]<-temp$results.residuals
-#		corr_data[,i]<-resid(lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.exclude))
-#		colnames(corr_data)[i]<-colnames(omics_df)[i]	
-#	}
-#	#}	
-#	return(list(corr_data=corr_data,covariates_chosen=covariate_list)) #covariates_chosen=new_cov_list
-#}
-
-#################
-#new correct data fucntion - with error trapping for predictors that have so many NAs that can't use lm()
 
 correct_data<-function(omics_df,cov_df,covariate_list,sample="discovery"){
 	df<-merge(omics_df,cov_df,by="iid")
-	##df<-df[complete.cases(df[,-1]),]
 	corr_data<-data.frame(matrix(NA,ncol=ncol(omics_df),nrow=nrow(df)))
 	corr_data[,1]<-df[,"iid"]
 	names(corr_data)[1]<-"iid"
-	##heading("Testing association of covariates with predictors...")
-	##model<-lm(df[,2] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-	##sig_count<-data.frame(covariate=rownames(summary(model)$coefficients)[-1],sig_count=0)
-	##for(i in 2:ncol(omics_df)){
-		##writeLines("")
-		##writeLines(paste0("Testing the association of ",colnames(df[,i,drop=F])," and ",covariate_list))
-		###df<-df[,c(colnames(omics_df[,i,drop=F]),colnames(cov_df[,-1]))]
-		##model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-		##print(summary(model))
-		#####
-		###need to see if each covariate is signif in majority or predictors
-		##results<-summary(model) 
-		##for(j in 1:nrow(sig_count)){
-			###writeLines(paste0(sig_count[j,1]))
-			##cov<-sig_count[j,1]
-			##pval<-results$coefficients[which(rownames(results$coefficients)==cov),4]
-			##count<-sig_count[j,2]
-			##new_count<-ifelse(pval<=0.05,count+1,count)
-			##sig_count[j,2]<-new_count
-		##}
-	##}
-	##total<-ncol(omics_df[,2:ncol(omics_df)])
-	##sig_count[,"proportion"]<-sig_count[,2]/total
-	##sig_count[,"cov_from_list"]<-NA
-	##for(covariate in covariate_list){
-		##fit_cov<-sig_count[grep(covariate,sig_count[,1]),1]
-		##sig_count[which(sig_count[,1]==fit_cov),"cov_from_list"]<-covariate
-	##}
-	##sig_count[,"keep"]<-ifelse(sig_count[,3]>0.5,TRUE,FALSE)
-	##new_cov_list<-sig_count[which(sig_count[,3]>0.5),4]
-	##print(sig_count)
-	##heading("Correcting for the following covariates:")
-	##print(new_cov_list)
-	##if(length(new_cov_list)>0){
-		##for(i in 2:ncol(omics_df)){
-			##model<-lm(df[,i] ~ .,data=subset(df,select=new_cov_list),na.action=na.omit)
-			##results<-summary(model)
-			##temp<-data.frame(results$residuals)
-			###print(sum(is.na(temp$results.residuals)))
-			##corr_data[,i]<-temp$results.residuals
-			##colnames(corr_data)[i]<-colnames(omics_df)[i]	
-		##}
-	##}else{
-	#for(i in 2:ncol(omics_df)){
-		#print(i)
-		#model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit)
-		#results<-summary(model)
-		#temp<-data.frame(results$residuals)
-		##print(sum(is.na(temp$results.residuals)))
-		##corr_data[,i]<-temp$results.residuals
-		#corr_data[,i]<-resid(lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.exclude))
-		#colnames(corr_data)[i]<-colnames(omics_df)[i]	
-	#}
 	for(i in 2:ncol(omics_df)){
 		print(i)
-		#ERROR HANDLING
   		possibleError <- tryCatch(
       		model<-lm(df[,i] ~ .,data=subset(df,select=covariate_list),na.action=na.omit),
       		error=function(e) e
   		)
 		if(!inherits(possibleError, "error")){
-    		#REAL WORK
-    		#print("yes!")
     		results<-summary(model)
     		print(summary(model))
 			temp<-data.frame(results$residuals)
@@ -770,41 +476,7 @@ correct_data<-function(omics_df,cov_df,covariate_list,sample="discovery"){
 			colnames(corr_data)[i]<-colnames(omics_df)[i]
   		}
 	}
-	##}	
 	return(list(corr_data=corr_data,covariates_chosen=covariate_list)) #covariates_chosen=new_cov_list
-}
-
-##################
-
-
-do_clustering<-function(df){
-	tdf<-t(df)
-	tdf<-data.frame(tdf)
-	colnames(tdf) <- as.character(unlist(tdf[1,]))
-	tdf = tdf[-1, ]
-	#kmeans
-	wss <- (nrow(tdf)-1)*sum(apply(tdf,2,var))
-	for (i in 2:15) wss[i] <- sum(kmeans(tdf,centers=i)$withinss)
-	plot(1:15, wss, type="b", xlab="Number of Clusters",ylab="Within groups sum of squares")
-	# K-Means Cluster Analysis
-	fit <- kmeans(tdf, 5) # 5 cluster solution
-	# get cluster means 
-	aggregate(tdf,by=list(fit$cluster),FUN=mean)
-	# append cluster assignment
-	mydata <- data.frame(tdf, fit$cluster)
-	# Ward Hierarchical Clustering
-	d <- dist(tdf, method = "euclidean") # distance matrix
-	fit <- hclust(d, method="ward") 
-	plot(fit) # display dendogram
-	groups <- cutree(fit, k=5) # cut tree into 5 clusters
-	# draw dendogram with red borders around the 5 clusters 
-	rect.hclust(fit, k=5, border="red")
-	# Ward Hierarchical Clustering with Bootstrapped p values
-	library(pvclust)
-	fit <- pvclust(tdf, method.hclust="ward", method.dist="euclidean")
-	plot(fit) # dendogram with p values
-	# add rectangles around groups highly supported by the data
-	pvrect(fit, alpha=.95)
 }
 
 extract_pcs<-function(omics_df,n,sample=""){
@@ -866,19 +538,6 @@ split_training_testing<-function(df,iteration){
 	return(list(training_data=data_training,testing_data=data_testing))
 }
 
-split_training_testing_random<-function(df,train,test){	
-	total<-nrow(df)
-	#test<-as.numeric(test)/100
-	no_testing<-round(as.numeric(test)*total,digits=0)
-	# get a random 25% of the overlap as testing data
-	data_testing<-df[sample.int(no_testing),]
-	write.table(data_testing,"st03_testing_data.tsv",col.names = T,row.names = F,quote = F,sep="\t")
-	#need to get the oter 75% as the training data
-	data_training<-subset(df,!(df$iid %in% data_testing$iid))
-	write.table(data_training,"st03_training_data.tsv",col.names = T,row.names = F,quote = F,sep="\t")
-	return(list(training_data=data_training,testing_data=data_testing))
-}
-
 outcome_matrix<-function(df,outcome){
 	x<-as.matrix(df[,outcome])
 	return(x)
@@ -933,10 +592,10 @@ plot_pred_obs<-function(pred_outcome,observed_outcome,sample){
 	}
 	x<-cor.test(pred_outcome,observed_outcome)
 	plot_obj<-plot(pred_outcome,observed_outcome,
-     col=colour,
-     main=paste("r =",round(x$estimate, 4),", p<",signif(x$p.value, 3)),
-     xlab = "Predicted Outcome",
-     ylab = "Observed Outcome")
+	     col=colour,
+	     main=paste("r =",round(x$estimate, 4),", p<",signif(x$p.value, 3)),
+	     xlab = "Predicted Outcome",
+	     ylab = "Observed Outcome")
 	return(plot_obj)
 }
 
@@ -969,9 +628,9 @@ write_out_model_errors_eddie<-function(observed_outcome,pred_outcome,sample,iter
 	data<-make_pred_obs_resids(observed_outcome,pred_outcome)
 	write.table(data,paste0("st03_pred_obs_resid_",sample,"_",iteration,".tsv"),col.names=T,row.names=F,quote=F,sep="\t")
 	#want to make scatter plot
-	#ggplot(data,aes(y=observed_outcome,x=resid)) +
-		#geom_point()
-	#ggsave(paste0("st03_scatter_obs_resid_",sample,"_",iteration,".png"))
+	ggplot(data,aes(y=observed_outcome,x=resid)) +
+		geom_point()
+	ggsave(paste0("st03_scatter_obs_resid_",sample,"_",iteration,".png"))
 }
 
 make_res_plots<-function(sample="orcades"){
@@ -1030,43 +689,6 @@ plot_effect_distribution<-function(iteration){
     ggsave(paste0("st03_effect_size_distribution_plot",iteration,".png"))
 }
 
-#want to find out which are negative + tally how much they overlap between iteration
-
-make_clock<-function(iteration,training_predictors,training_outcome,testing_predictors,testing_outcome,validation_predictors=NULL,validation_outcome=NULL){
-	writeLines("Performing cross validation in the training sample...")
-	training_data_cv<-cross_validation(training_predictors,training_outcome)
-	writeLines("Plotting cross validation curve...")
-	plot_cv_curve(training_data_cv,iteration)
-	lambda_for_model<-training_data_cv$lambda.min
-	writeLines(paste0("Lambda selected for elastic net = ",lambda_for_model))
-	writeLines("Fitting elastic net...")
-	model<-fit_elastic_net(training_predictors,training_outcome)
-	writeLines("Writing out model coefficients...")
-	write_out_model(model,lambda_for_model,iteration)
-	writeLines("Plotting effect sixe distribution...")
-	plot_effect_distribution(iteration)
-	writeLines("Predicting outcome phenotype in training set...")
-	predicted_outcome_training<-predict_outcome(model,training_predictors,lambda_for_model)
-	writeLines("Plotting observed versus predicted outcome in the training set...")
-	create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
-	writeLines("Writing out model residuals for the training set...")
-	write_out_model_errors(training_outcome,predicted_outcome_training,"training",iteration)
-	writeLines("Predicting outcome phenotype in testing set...")
-	predicted_outcome_testing<-predict_outcome(model,testing_predictors,lambda_for_model)
-	writeLines("Plotting observed versus predicted outcome in the testing set...")
-	create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
-	writeLines("Writing out model residuals for the testing set...")
-	write_out_model_errors(testing_outcome,predicted_outcome_testing,"testing",iteration)
-	if(!missing(validation_predictors)){
-		writeLines("Predicting outcome phenotype in validation set...")
-		predicted_outcome_validation<-predict_outcome(model,validation_predictors,lambda_for_model)
-		writeLines("Plotting observed versus predicted outcome in the validation set...")
-		create_pred_obs_plots(predicted_outcome_validation,validation_outcome,"validation",iteration)
-		writeLines("Writing out model residuals for the validation set...")
-		write_out_model_errors(validation_outcome,predicted_outcome_validation,"validation",iteration)
-	}
-}
-
 
 penalised_regression<-function(training_predictors,training_outcome,testing_predictors,testing_outcome,outcome,method,if_elastic_net="cv",iteration=1){
 	#sort which method we are doing
@@ -1074,7 +696,7 @@ penalised_regression<-function(training_predictors,training_outcome,testing_pred
 		writeLines("Performing cross validation in the training sample...")
 		training_data_cv<-cross_validation(training_predictors,training_outcome)
 		writeLines("Plotting cross validation curve...")
-		#plot_cv_curve(training_data_cv,iteration)
+		plot_cv_curve(training_data_cv,iteration)
 		lambda_for_model<-training_data_cv$lambda.min
 		writeLines(paste0("Lambda selected for penalised regression = ",lambda_for_model))
 		if(method=="lasso"){
@@ -1090,17 +712,17 @@ penalised_regression<-function(training_predictors,training_outcome,testing_pred
 		writeLines("Writing out model coefficients...")
 		write_out_model(model,lambda_for_model,iteration)
 		writeLines("Plotting effect size distribution...")
-		#plot_effect_distribution(iteration)
+		plot_effect_distribution(iteration)
 		writeLines("Predicting outcome phenotype in training set...")
 		predicted_outcome_training<-predict_outcome(model,training_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the training set...")
-		#create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
+		create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
 		writeLines("Writing out model residuals for the training set...")
 		write_out_model_errors(training_outcome,predicted_outcome_training,"training",iteration)
 		writeLines("Predicting outcome phenotype in testing set...")
 		predicted_outcome_testing<-predict_outcome(model,testing_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the testing set...")
-		#create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
+		create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
 		writeLines("Writing out model residuals for the testing set...")
 		write_out_model_errors(testing_outcome,predicted_outcome_testing,"testing",iteration)
 	}else if((method=="elastic_net") & (if_elastic_net=="cv")){
@@ -1114,17 +736,17 @@ penalised_regression<-function(training_predictors,training_outcome,testing_pred
 		write_out_model(model$finalModel,model$bestTune$lambda,iteration)
 		writeLines("Predicting outcome phenotype in training set...")
 		writeLines("Plotting effect size distribution...")
-		#plot_effect_distribution(iteration)
+		plot_effect_distribution(iteration)
 		writeLines("Predicting outcome phenotype in training set...")
 		predicted_outcome_training<-predict_outcome(model$finalModel,training_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the training set...")
-		#create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
+		create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
 		writeLines("Writing out model residuals for the training set...")
 		write_out_model_errors(training_outcome,predicted_outcome_training,"training",iteration)
 		writeLines("Predicting outcome phenotype in testing set...")
 		predicted_outcome_testing<-predict_outcome(model$finalModel,testing_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the testing set...")
-		#create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
+		create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
 		writeLines("Writing out model residuals for the testing set...")
 		write_out_model_errors(testing_outcome,predicted_outcome_testing,"testing",iteration)
 	}
@@ -1137,7 +759,7 @@ penalised_regression_eddie<-function(training_predictors,training_outcome,testin
 		writeLines("Performing cross validation in the training sample...")
 		training_data_cv<-cross_validation(training_predictors,training_outcome)
 		writeLines("Plotting cross validation curve...")
-		#plot_cv_curve(training_data_cv,iteration)
+		plot_cv_curve(training_data_cv,iteration)
 		lambda_for_model<-training_data_cv$lambda.min
 		writeLines(paste0("Lambda selected for penalised regression = ",lambda_for_model))
 		if(method=="lasso"){
@@ -1153,17 +775,17 @@ penalised_regression_eddie<-function(training_predictors,training_outcome,testin
 		writeLines("Writing out model coefficients...")
 		write_out_model(model,lambda_for_model,iteration)
 		writeLines("Plotting effect size distribution...")
-		#plot_effect_distribution(iteration)
+		plot_effect_distribution(iteration)
 		writeLines("Predicting outcome phenotype in training set...")
 		predicted_outcome_training<-predict_outcome(model,training_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the training set...")
-		#create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
+		create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
 		writeLines("Writing out model residuals for the training set...")
 		write_out_model_errors_eddie(training_outcome,predicted_outcome_training,"training",iteration)
 		writeLines("Predicting outcome phenotype in testing set...")
 		predicted_outcome_testing<-predict_outcome(model,testing_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the testing set...")
-		#create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
+		create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
 		writeLines("Writing out model residuals for the testing set...")
 		write_out_model_errors_eddie(testing_outcome,predicted_outcome_testing,"testing",iteration)
 	}else if((method=="elastic_net") & (if_elastic_net=="cv")){
@@ -1177,17 +799,17 @@ penalised_regression_eddie<-function(training_predictors,training_outcome,testin
 		write_out_model(model$finalModel,model$bestTune$lambda,iteration)
 		writeLines("Predicting outcome phenotype in training set...")
 		writeLines("Plotting effect size distribution...")
-		#plot_effect_distribution(iteration)
+		plot_effect_distribution(iteration)
 		writeLines("Predicting outcome phenotype in training set...")
 		predicted_outcome_training<-predict_outcome(model$finalModel,training_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the training set...")
-		#create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
+		create_pred_obs_plots(predicted_outcome_training,training_outcome,"training",iteration)
 		writeLines("Writing out model residuals for the training set...")
 		write_out_model_errors_eddie(training_outcome,predicted_outcome_training,"training",iteration)
 		writeLines("Predicting outcome phenotype in testing set...")
 		predicted_outcome_testing<-predict_outcome(model$finalModel,testing_predictors,lambda_for_model)
 		writeLines("Plotting observed versus predicted outcome in the testing set...")
-		#create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
+		create_pred_obs_plots(predicted_outcome_testing,testing_outcome,"testing",iteration)
 		writeLines("Writing out model residuals for the testing set...")
 		write_out_model_errors_eddie(testing_outcome,predicted_outcome_testing,"testing",iteration)
 	}
@@ -1229,13 +851,6 @@ do_pca<-function(df,outcome_df,sample=""){
 	my_palette <- colorRampPalette(c("red", "white", "blue"))(n=199)
 	heatmap.2(cor_matrix$r,Rowv=TRUE,Colv=TRUE,scale ="none",trace="none",symkey=FALSE,col=my_palette)
 	dev.off()
-	#library(devtools)
-	#install_github("ggbiplot", "vqv")
- 	#library(ggbiplot)
-	#g <- ggbiplot(pcs, obs.scale = 1, var.scale = 1, ellipse = TRUE, circle = TRUE)
-	#g <- g + scale_color_discrete(name = '')
-	#g <- g + theme(legend.direction = 'horizontal',legend.position = 'top')
-	#print(g)
 }
 
 get_model_errors<-function(sample){
@@ -1267,31 +882,6 @@ get_model_errors_single_variable<-function(sample){
 	}
 	return(errors)
 }
-
-make_smoker_status_variables<-function(df,cohort="ORCADES"){
-	if(missing(cohort)){
-		df[,'smoker']<-ifelse(df$currsmok==1,TRUE,NA)
-		df[,'ex_smoker']<-ifelse(df$currsmok==2 & df$eversmok==1,TRUE,NA)
-		df[,'non_smoker']<-ifelse(df$currsmok==2 & df$eversmok==2,TRUE,NA)	
-	}else if(cohort=="Vis"){
-		df[,'smoker']<-ifelse(df$currsmok==1,TRUE,NA)
-		df[,'ex_smoker']<-ifelse(df$currsmok==3,TRUE,NA)
-		df[,'non_smoker']<-ifelse(df$currsmok==2,TRUE,NA)
-	}else if(cohort=="Korcula"){
-		df[,'smoker']<-ifelse(df$currsmok==1,TRUE,NA)
-		df[,'ex_smoker']<-ifelse(df$currsmok==2 & df$eversmok==1,TRUE,NA)
-		df[,'non_smoker']<-ifelse(df$currsmok==2 & df$eversmok==2,TRUE,NA)
-	}
-	return(df)
-}
-
-split_by_smoker_status<-function(df){
-	non_smokers<-df[which(df$non_smoker),!(names(df)%in%c("currsmok","eversmok","non_smoker","ex_smoker","smoker"))]
-	ex_smokers<-df[which(df$ex_smoker),!(names(df)%in%c("currsmok","eversmok","non_smoker","ex_smoker","smoker"))]
-	curr_smokers<-df[which(df$smoker),!(names(df)%in%c("currsmok","eversmok","non_smoker","ex_smoker","smoker"))]
-	return(list(non_smokers=non_smokers,ex_smokers=ex_smokers,curr_smokers=curr_smokers))
-}
-
 
 
 get_stats<-function(resid_file,study,omic){
